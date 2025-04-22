@@ -4,6 +4,123 @@
 #include <fstream>//ファイルに書き込み、読み込み
 #include <chrono>//時間を扱う
 
+#include<string>
+#include<format>
+
+
+
+
+#pragma region 00_04-CPP
+
+/*
+std::wstring ConvertString(const std::string& str)
+{
+	if (str.empty())
+	{
+		return std::wstring;
+	}
+
+	auto sizeNeeded = MultiByteToWideChar
+	(
+		CP_UTF8, 0,
+		reinterpret_cast<const_char*>(&str[0]),
+		static_const<int>(str.size()),
+		NULL, 0
+	);
+
+	if (sizeNeeded == 0)
+	{
+		return std::wstring();
+	}
+
+	std::wstring result(sizeNeeded, 0);
+	MultiByteToWideChar
+	(
+		CP_UTF8, 0,
+		reinterpret_cast<const char*>(&str[0]),
+		static_cast<int>(str.size()),
+		&result[0], sizeNeeded
+	);
+
+}
+
+
+std::string ConvertString(const std::wstring& str)
+{
+	if (str.empty())
+	{
+		return std::string();
+	}
+
+	auto sizeNeeded = WideCharToMultiByte
+	(
+		CP_UTF8, 0,
+		str.data(),
+		static_cast<int>(str.size()),
+		NULL, 0, NULL, NULL
+	);
+
+	if (sizeNeeded == 0)
+	{
+		return std::string();
+	}
+
+	std::string result(sizeeNeeded, 0);
+	WideCharToMultiByte
+	(
+		CP_UTF8, 0, str.data(),
+		static_cast<int>(str.size()),
+		result.data(), sizeNeeded, NULL, NULL
+	);
+
+
+	return result;
+
+}
+*/
+
+#pragma endregion
+
+
+
+
+
+
+
+
+void Log(const std::string& message) 
+{
+	OutputDebugStringA(message.c_str());
+}
+
+//string->wstring
+std::wstring ConvertString(const std::string& str);
+
+//wstring->string
+std::string ConvertString(const std::wstring& str);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//wstring->string
+//Log(ConvertString(std::format(L"WSTRING{}\n", wstringValue)));
+
+
+
+
+
+
 
 //ウインドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -24,7 +141,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 
 }
-
 
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)

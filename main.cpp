@@ -8,23 +8,28 @@
 #include<format>
 
 
+void Log(const std::string& message)
+{
+	OutputDebugStringA(message.c_str());
+}
+
 
 
 #pragma region 00_04-CPP
 
-/*
+/**/
 std::wstring ConvertString(const std::string& str)
 {
 	if (str.empty())
 	{
-		return std::wstring;
+		return std::wstring();
 	}
 
 	auto sizeNeeded = MultiByteToWideChar
 	(
 		CP_UTF8, 0,
-		reinterpret_cast<const_char*>(&str[0]),
-		static_const<int>(str.size()),
+		reinterpret_cast<const char*>(&str[0]),
+		static_cast<int>(str.size()),
 		NULL, 0
 	);
 
@@ -65,7 +70,7 @@ std::string ConvertString(const std::wstring& str)
 		return std::string();
 	}
 
-	std::string result(sizeeNeeded, 0);
+	std::string result(sizeNeeded, 0);
 	WideCharToMultiByte
 	(
 		CP_UTF8, 0, str.data(),
@@ -77,8 +82,6 @@ std::string ConvertString(const std::wstring& str)
 	return result;
 
 }
-*/
-
 #pragma endregion
 
 
@@ -88,10 +91,9 @@ std::string ConvertString(const std::wstring& str)
 
 
 
-void Log(const std::string& message) 
-{
-	OutputDebugStringA(message.c_str());
-}
+
+
+
 
 //string->wstring
 std::wstring ConvertString(const std::string& str);
@@ -111,10 +113,6 @@ std::string ConvertString(const std::wstring& str);
 
 
 
-
-
-//wstring->string
-//Log(ConvertString(std::format(L"WSTRING{}\n", wstringValue)));
 
 
 
@@ -145,6 +143,17 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
+
+
+
+
+	//wstring->string
+	Log(ConvertString(std::format(L"--------------------WSTRING{}\n",L"abc")));
+
+
+
+
+
 
 	//ウインドウ
 	///
@@ -224,6 +233,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	OutputDebugStringA("Hello,DirectX!\n");
 
 
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	
 
 	return 0;
 }

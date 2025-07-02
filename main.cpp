@@ -877,7 +877,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	descriptionRootSignature.NumParameters = _countof(rootParameters);//配列の長さ
 
 
-	//Samplerの指定
+	//Samplerの設定
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;//バイナリニアフィルター
 	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//0～1の範囲外をリピート
@@ -1019,19 +1019,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	
 	
 	//左下
-	verteData[0] = { -0.5f,-0.5f ,0.0f ,1.0f };
+	verteData[0].position = { -0.5f,-0.5f ,0.0f ,1.0f };
 	verteData[0].texcoord = { 0.0f ,1.0f };
 	
 
 	
 	//上
-	verteData[1] = { 0.0f,0.5f ,0.0f ,1.0f };
+	verteData[1].position = { 0.0f,0.5f ,0.0f ,1.0f };
 	verteData[1].texcoord = { 0.5f ,0.0f };
 
 	
 	
 	//右下
-	verteData[2] = { 0.5f,-0.5f ,0.0f ,1.0f };
+	verteData[2].position = { 0.5f,-0.5f ,0.0f ,1.0f };
 	verteData[2].texcoord = { 1.0f ,1.0f };
 
 

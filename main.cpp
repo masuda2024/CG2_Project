@@ -1913,6 +1913,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	bool useMonsterBall = true;
 
 
+
+
+
 	//ウィンドウのxボタンが押されるまでループ
 
 	MSG msg{};

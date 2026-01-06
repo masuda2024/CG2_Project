@@ -142,6 +142,7 @@ struct Material
 {
 	Vector4 color;
 	int32_t enableLighting;
+	float shininess;
 };
 
 struct TransformationMatrix
@@ -155,6 +156,13 @@ struct DirectionalLight
 	Vector4 color;     //ライトの色
 	Vector3 direction; //ライトの向き
 	float intensity;  //ライトの輝度
+};
+
+
+//カメラ
+struct CameraForGPU
+{
+	Vector3 worldPosition;
 };
 #pragma endregion
 
@@ -660,7 +668,6 @@ IDxcBlob* CompileShader
 		Log(shaderError->GetStringPointer());
 		//警告・エラーダメゼッタイ
 		assert(false);
-
 	}
 
 	//4.Compile結果を受け取って返す
@@ -1227,7 +1234,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 
 	//RootParameter作成。複数設定できるので配列。今回は結果1つだけなので長さの配列
-	D3D12_ROOT_PARAMETER rootParameters[4] = {};
+	D3D12_ROOT_PARAMETER rootParameters[5] = {};
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//CBVを使う//b0のbと一致する
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderで使う
 	rootParameters[0].Descriptor.ShaderRegister = 0;//レジスタ番号0とバインド//bというのはConstantBufferのこと
@@ -1246,7 +1253,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderで使う
 	rootParameters[3].Descriptor.ShaderRegister = 1;//レジスタ番号1を使う
 
-
+	rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//CBVを使う
+	rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderで使う
+	rootParameters[4].Descriptor.ShaderRegister = 2;//レジスタ番号2を使う
 
 	descriptionRootSignature.pParameters = rootParameters;//ルートパラメータ配列へのポインタ
 	descriptionRootSignature.NumParameters = _countof(rootParameters);//配列の長さ
@@ -1594,7 +1603,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//マテリアルの内容
 	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	materialData->enableLighting = true;
-
+	materialData->shininess = 70;
 
 
 
@@ -1902,9 +1911,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 
 
+	//カメラ用のリソースを作る
+	ID3D12Resource* cameraResource = CreateBufferResource(device, sizeof(CameraForGPU));
+	//マテリアルにデータを書き込む
+	CameraForGPU* cameraData = nullptr;
+	//書き込むためのアドレスを取得
+	cameraResource->Map(0, nullptr, reinterpret_cast<void**>(&cameraData));
 
-
-
+	cameraData->worldPosition = cameraTransform.translate;
 
 
 
@@ -1996,32 +2010,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 
 
-		//////////////
-
-		/////
-
-
-		
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		/////
-
-
-		////////////////////
 
 
 
@@ -2046,6 +2034,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 		//遷移後のResourceState
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+
+
+
+
+
 
 		//TransitionBarrierを張る
 		commandList->ResourceBarrier(1, &barrier);		//TransitionBarrierを張る
@@ -2095,8 +2089,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		//DirectionalLight用CBufferの場所を設定
 		commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-
-
+		//cameraのCBufferの場所を設定
+		commandList->SetGraphicsRootConstantBufferView(4, cameraResource->GetGPUVirtualAddress());
+		
+		
 		//切り替え
 		commandList->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU2 : textureSrvHandleGPU);
 
@@ -2223,7 +2219,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
-
+	cameraResource->Release();
 
 	indexResourceSprite->Release();
 	transformationMatrixResourceSprite->Release();

@@ -40,23 +40,31 @@ PixelShaderOutput main(VertexShaderOutput input)
 {
     PixelShaderOutput output;
     float32_t4 textureColor = gTexture.Sample(gSampler, input.texcoord);
-   // output.color = gMaterial.color * textureCollor;
+    //output.color = gMaterial.color * textureCollor;
    
-    
-    
     
     //flost3 transformedUV = mul(float32_t4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform); ////////////////////
     //flaot32_t4 textureColor = gTexture.Sample(gSampler, transformedUV.xy);///////////////////////////
    
     if(gMaterial.enableLighting != 0)
     {
+        
         //Lightingする場合
         //カメラの方向を算出
         float32_t3 toEye = normalize(gCamera.worldPosition - input.worldPosition);
-        float32_t3 reflectLight = reflect(gDirectionalLight.direction, normalize(input.normal));
+        float32_t3 reflectLight = reflect(-gDirectionalLight.direction, normalize(input.normal));
         float RdotE = dot(reflectLight, toEye);
         float specularPow = pow(saturate(RdotE), gMaterial.shininess);//反射強度
         //float specularPow = pow(saturate(RdotE), 70); //反射強度
+        
+        
+        //HalfVector
+        float32_t3 halfVector = normalize(-gDirectionalLight.direction + toEye);
+        float NDotH = dot(normalize(input.normal), halfVector);
+        float specularPow2 = pow(saturate(NDotH), gMaterial.shininess);
+        
+        
+        
         
         //HalfLambert
         float NdotL = dot(normalize(input.normal), -gDirectionalLight.direction);
@@ -64,8 +72,7 @@ PixelShaderOutput main(VertexShaderOutput input)
     
         //float cos = saturate(dot(normalize(input.normal), gDirectionalLight.direction));
         //output.color = gMaterial.color * textureColor * gDirectionalLight.color * cos * gDirectionalLight.intensity;
-        
-        
+      
         //拡散反射
         float32_t3 diffuse =
         gMaterial.color.rgb * textureColor.rgb * gDirectionalLight.color.rgb * cos * gDirectionalLight.intensity;
@@ -77,19 +84,14 @@ PixelShaderOutput main(VertexShaderOutput input)
         //アルファは今まで通り
         output.color.a = gMaterial.color.a * textureColor.a;
         
-        
-        
+       
     }
     else//Lightingしない場合
     {
         output.color = gMaterial.color * textureColor;
     }
     
-   
-    
-    
-    
-    
+
     return output;
 }
 

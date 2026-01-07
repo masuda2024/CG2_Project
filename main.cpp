@@ -398,7 +398,7 @@ float Length(const Vector3& v)
 Vector3 Normalize(const Vector3& v)
 {
 	float length = Length(v);
-	if (length == 0)
+	if (length == 0.0f)
 	{
 		return v;
 	}
@@ -1209,6 +1209,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	assert(SUCCEEDED(hr));
 
 
+
+
+
+
+
+
+
+
 //=============================PSO===========================
 	//RootSignature作成
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
@@ -1273,13 +1281,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderで使う
 	descriptionRootSignature.pStaticSamplers = staticSamplers;
 	descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
-
-
-
-
-
-
-
 
 
 
@@ -1579,16 +1580,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	VertexData* vertexData = nullptr;
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));//書き込むためのアドレスを取得
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());//頂点データをリソースにコピー
-*/
+    */
 
 #pragma endregion
-
-
-
-
-
-
-
 
 
 
@@ -1603,7 +1597,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//マテリアルの内容
 	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	materialData->enableLighting = true;
-	materialData->shininess = 70;
+	materialData->shininess = 70.0f;
 
 
 
@@ -1918,7 +1912,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//書き込むためのアドレスを取得
 	cameraResource->Map(0, nullptr, reinterpret_cast<void**>(&cameraData));
 
-	cameraData->worldPosition = cameraTransform.translate;
+	cameraData->worldPosition = { 0.0f,0.0f,-15.0f };
 
 
 
@@ -1970,6 +1964,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		wvpData->World = worldMatrixaxis;
 
 
+		
 
 
 
@@ -2005,10 +2000,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		ImGui::DragFloat3("Scale", &transform.scale.x, 0.1f);
 		ImGui::End();
 
+		
 		//方向を正規化
 		directionalLightData->direction = Normalize(directionalLightData->direction);
-
-
 
 
 

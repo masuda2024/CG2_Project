@@ -149,6 +149,7 @@ struct TransformationMatrix
 {
 	Matrix4x4 WVP;
 	Matrix4x4 World;
+	Matrix4x4 WorldInverseTranspose;
 };
 
 struct DirectionalLight
@@ -911,12 +912,6 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 
 
 
-
-
-
-
-
-
 //ウインドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 	WPARAM wparam, LPARAM lparam)
@@ -943,14 +938,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -1293,6 +1280,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//単位行列を書き込んでおく
 	wvpData->WVP = MakeIdentity4x4();
 	wvpData->World = MakeIdentity4x4();
+	wvpData->WorldInverseTranspose = MakeIdentity4x4();
+
 
 	//シリアライズしてバイナリする
 	ID3D10Blob* signatureBlob = nullptr;
@@ -1835,10 +1824,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 
 
-	//[][][][][[][][][]
-	//[][][][][[][][][]
-	//[][][][][[][][][]
-	//[][][][][[][][][]
+	//[][][][][][][][][]
+	//[][][][][][][][][]
+	//[][][][][][][][][]
+	//[][][][][][][][][]
 
 
 	Transform transformSprite
@@ -1916,11 +1905,34 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 
 
+	bool cameraReset = false;
+
+#pragma region Sprite
+
+	bool drawSprite = true;
+	bool spriteReset = false;
+
+	bool autoSpriteRotateX = false;
+	bool autoSpriteRotateY = false;
+	bool autoSpriteRotateZ = false;
+
+#pragma endregion
+
+
+#pragma region Model
+
+	bool drawModel = true;
+	bool ModelReset = false;
 
 	//テクスチャをモンスターボールに切り替える
 	bool useMonsterBall = true;
 
-
+	
+	bool autoModelRotateX = false;
+	bool autoModelRotateY = false;
+	bool autoModelRotateZ = false;
+	
+#pragma endregion
 
 
 
@@ -1977,11 +1989,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		ImGui::NewFrame();
 
 		ImGui::Begin("Camera");
+		ImGui::Checkbox("CameraReset", &cameraReset);
 		ImGui::DragFloat3("Transform", &cameraTransform.translate.x, 0.1f);
 		ImGui::End();
 
 		ImGui::Begin("Sprite");
+		ImGui::Checkbox("SpriteReset", &spriteReset);
+		ImGui::Checkbox("DrawSprite", &drawSprite);
 		ImGui::ColorEdit4("material", &materialData->color.x, ImGuiColorEditFlags_AlphaPreview);
+		
+		ImGui::Checkbox("AutoSpriteRotate-X", &autoSpriteRotateX);
+		ImGui::Checkbox("AutoSpriteRotate-Y", &autoSpriteRotateY);
+		ImGui::Checkbox("AutoSpriteRotate-Z", &autoSpriteRotateZ);
+		
 		ImGui::DragFloat2("Transform", &transformSprite.translate.x, 0.1f);
 		ImGui::DragFloat("rotate.X", &transformSprite.rotate.x, 0.1f);
 		ImGui::DragFloat("rotate.Y", &transformSprite.rotate.y, 0.1f);
@@ -1991,18 +2011,104 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 
 		ImGui::Begin("Model");
+		
+		ImGui::Checkbox("ModelReset", &ModelReset);
+		ImGui::Checkbox("DrawModel", &drawModel);
 		ImGui::Checkbox("useMonsterBall", &useMonsterBall);
+		
+		ImGui::Checkbox("AutoModelRotate-X", &autoModelRotateX);
+		ImGui::Checkbox("AutoModelRotate-Y", &autoModelRotateY);
+		ImGui::Checkbox("AutoModelRotate-Z", &autoModelRotateZ);
+		
 		ImGui::DragFloat3("light", &directionalLightData->direction.x, 0.1f);
 		ImGui::DragFloat3("Transform", &transform.translate.x, 0.1f);
 		ImGui::DragFloat("rotate.X", &transform.rotate.x, 0.1f);
 		ImGui::DragFloat("rotate.Y", &transform.rotate.y, 0.1f);
 		ImGui::DragFloat("rotate.Z", &transform.rotate.z, 0.1f);
 		ImGui::DragFloat3("Scale", &transform.scale.x, 0.1f);
+		
 		ImGui::End();
 
 		
 		//方向を正規化
 		directionalLightData->direction = Normalize(directionalLightData->direction);
+		
+		//カメラのリセット
+		if (cameraReset)
+		{
+			cameraTransform.translate = { 0.0f,0.0f,-15.0f };
+			cameraTransform.rotate = { 0.0f,0.0f,0.0f };
+			cameraTransform.scale = { 1.0f,1.0f,1.0f };
+			cameraReset = false;
+		}
+
+#pragma region Sprite
+
+
+		if (spriteReset)
+		{
+			transformSprite.translate = { 0.0f,0.0f,0.0f };
+			transformSprite.rotate = { 0.0f,0.0f,0.0f };
+			transformSprite.scale = { 1.0f,1.0f,1.0f };
+			spriteReset = false;
+			autoSpriteRotateX = false;
+			autoSpriteRotateY = false;
+			autoSpriteRotateZ = false;
+		}
+
+		//自動回転
+		if (autoSpriteRotateX)
+		{
+			transformSprite.rotate.x += 0.03f;
+		}
+
+		if (autoSpriteRotateY)
+		{
+			transformSprite.rotate.y += 0.03f;
+		}
+
+		if (autoSpriteRotateZ)
+		{
+			transformSprite.rotate.z += 0.03f;
+		}
+
+#pragma endregion
+
+#pragma region モデル
+		//モデルのリセット
+		if (ModelReset)
+		{
+			transform.translate = { 0.0f,0.0f,0.0f };
+			transform.rotate = { 0.0f,0.0f,0.0f };
+			transform.scale = { 1.0f,1.0f,1.0f };
+			ModelReset = false;
+			autoModelRotateX = false;
+			autoModelRotateY = false;
+			autoModelRotateZ = false;
+		}
+
+ 
+		//自動回転
+		if (autoModelRotateX)
+		{
+			transform.rotate.x += 0.03f;
+		}
+
+		if (autoModelRotateY)
+		{
+			transform.rotate.y += 0.03f;
+		}
+
+		if (autoModelRotateZ)
+		{
+			transform.rotate.z += 0.03f;
+		}
+
+#pragma endregion
+
+
+
+
 
 
 
@@ -2090,15 +2196,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//切り替え
 		commandList->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU2 : textureSrvHandleGPU);
 
-
-		transform.rotate.y += 0.03f;
+		
 
 		//描画!(DrawCall/ドローコール)。3頂点で1つのインタランス。インタランスについては今後
 		//commandList->DrawInstanced(6, 1, 0, 0);
-		
-		//モデル描画
 		commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 
+		//モデル描画
+		if (drawModel)
+		{
+			commandList->DrawInstanced(kNumSphereVertices, 1, 0, 0);
+		}
+		
 
 
 		//////////////////
@@ -2112,9 +2221,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
 		//commandList->SetComputeRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 		//commandList->DrawInstanced(6, 1, 0, 0);
-		commandList->DrawInstanced(kNumSphereVertices, 1, 0, 0);
-
-
+		
 
 #pragma region Spriteの描画
 
@@ -2138,11 +2245,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 		//インデックスを指定
 		commandList->IASetIndexBuffer(&indexBufferViewSprite);
-		//描画
-		//commandList->DrawInstanced(6, 1, 0, 0);
+		
 
-		commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-        
+		//描画
+		if (drawSprite)
+		{
+			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+			//commandList->DrawInstanced(6, 1, 0, 0);
+		}
+
+		
 
 #pragma endregion
 
@@ -2279,7 +2391,3 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	CoUninitialize();
 }
-
-
-
-
